@@ -2,9 +2,11 @@
 #include <string.h>
 
 #include "rv.h"
+#include "ch32v003fun.h"
+const rv_u32 RAM_BASE = 0x20000000;
+const rv_u32 RAM_END = 0x20000800;
+const rv_u32 RAM_SIZE = (RAM_END - RAM_BASE);
 
-#define RAM_BASE 0x80000000
-#define RAM_SIZE 0x10000
 
 rv_res bus_cb(void *user, rv_u32 addr, rv_u8 *data, rv_u32 is_store,
               rv_u32 width) {
@@ -22,12 +24,14 @@ rv_u32 program[2] = {
 };
 
 int main(void) {
+    SystemInit();
+    printf("Hello, World!\n");
   rv_u8 mem[RAM_SIZE];
   rv cpu;
   rv_init(&cpu, (void *)mem, &bus_cb);
   memcpy((void *)mem, (void *)program, sizeof(program));
   while (rv_step(&cpu) != RV_EMECALL) {
   }
-  printf("Environment call @ %08X: %u\n", cpu.csr.mepc, cpu.r[17]);
+  printf("Environment call @ %08lX: %lu\n", cpu.csr.mepc, cpu.r[17]);
   return 0;
 }

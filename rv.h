@@ -53,8 +53,11 @@ typedef rv_u32 rv_res;
 #define RV_BAD 1
 #define RV_BAD_ALIGN 2
 #define RV_PAGEFAULT 3
-#define RV_TRAP_NONE 0x80000010
-#define RV_TRAP_WFI 0x80000011
+extern const rv_u32 RAM_BASE;
+#define RV_TRAP_NONE RAM_BASE + 0x10
+#define RV_TRAP_WFI RAM_BASE + 0x11
+//#define RV_TRAP_NONE 0x80000010
+//#define RV_TRAP_WFI 0x80000011
 
 typedef struct rv_csr {
   rv_u32 /* sstatus, */ sie, stvec, scounteren, sscratch, sepc, scause, stval,

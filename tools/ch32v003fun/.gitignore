@@ -1,4 +1,6 @@
-example
+.pio
+.vscode
+.idea
 *.elf
 *.hex
 *.lst
@@ -6,4 +8,4 @@ example
 *.map
 *.o
 *.exe
-*.obj
+generated_*.ld
