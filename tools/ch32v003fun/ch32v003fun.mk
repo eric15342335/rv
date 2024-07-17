@@ -7,7 +7,7 @@ CH32V003FUN?=../ch32v003fun
 
 WRITE_SECTION?=flash
 SYSTEM_C?=$(CH32V003FUN)/ch32v003fun.c
-CFLAGS?=-g -Os -flto -ffunction-sections -fdata-sections -fmessage-length=0 -msmall-data-limit=8
+CFLAGS?=-g -O1 -ffunction-sections -fdata-sections -fmessage-length=0 -msmall-data-limit=8
 
 ifeq ($(TARGET_MCU),CH32V003)
 	CFLAGS_ARCH+=-march=rv32ec -mabi=ilp32e -DCH32V003=1
@@ -145,7 +145,7 @@ CFLAGS+= \
 	$(CFLAGS_ARCH) -static-libgcc \
 	-I$(CH32V003FUN) \
 	-nostdlib \
-	-I. -Wall $(EXTRA_CFLAGS) \
+	-I. -Wall -Wextra $(EXTRA_CFLAGS) \
 	-Wshadow -Wswitch -Wfloat-equal rv.c
 
 LDFLAGS+=-T $(LINKER_SCRIPT) -Wl,--gc-sections

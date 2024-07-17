@@ -2,7 +2,7 @@
 
 #include <string.h>
 
-#define RV_RESET_VEC RAM_BASE /* CPU reset vector */
+#define RV_RESET_VEC 0x80000000 /* CPU reset vector */
 
 #define rv_ext(c) (1 << (rv_u8)((c) - 'A')) /* isa extension bit in misa */
 

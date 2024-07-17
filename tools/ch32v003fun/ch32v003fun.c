@@ -19,6 +19,7 @@ int mini_vpprintf(int (*puts)(char* s, int len, void* buf), void* buf, const cha
 
 static int __puts_uart(char *s, int len, void *buf)
 {
+    (void)buf;
 	_write( 0, s, len );
 	return len;
 }
@@ -125,7 +126,7 @@ int wctomb(char *s, wchar_t wc)
 }
 #endif
 size_t strlen(const char *s) { const char *a = s;for (; *s; s++);return s-a; }
-size_t strnlen(const char *s, size_t n) { const char *p = memchr(s, 0, n); return p ? p-s : n;}
+size_t strnlen(const char *s, size_t n) { const char *p = memchr(s, 0, n); return p ? (size_t)(p-s) : n;}
 void *memset(void *dest, int c, size_t n) { unsigned char *s = dest; for (; n; n--, s++) *s = c; return dest; }
 char *strcpy(char *d, const char *s) { for (; (*d=*s); s++, d++); return d; }
 char *strncpy(char *d, const char *s, size_t n) { for (; n && (*d=*s); n--, s++, d++); return d; }
@@ -236,13 +237,13 @@ static char *twoway_strstr(const unsigned char *h, const unsigned char *n)
 	/* Search loop */
 	for (;;) {
 		/* Update incremental end-of-haystack pointer */
-		if (z-h < l) {
+		if (z-h < (int)l) {
 			/* Fast estimate for MAX(l,63) */
 			size_t grow = l | 63;
 			const unsigned char *z2 = memchr(z, 0, grow);
 			if (z2) {
 				z = z2;
-				if (z-h < l) return 0;
+				if (z-h < (int)l) return 0;
 			} else z += grow;
 		}
 
@@ -1347,6 +1348,7 @@ void SetupUART( int uartBRR )
 // For debug writing to the UART.
 int _write(int fd, const char *buf, int size)
 {
+    (void)fd;
 	for(int i = 0; i < size; i++){
 	    while( !(USART1->STATR & USART_FLAG_TC));
 	    USART1->DATAR = *buf++;
