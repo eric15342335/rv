@@ -3,8 +3,8 @@
 
 #include "rv.h"
 #include "ch32v003fun.h"
-const rv_u32 RAM_BASE = 0x20000000;
-const rv_u32 RAM_END = 0x20000800;
+const rv_u32 RAM_BASE = 0x20000100;
+const rv_u32 RAM_END = 0x20000700;
 const rv_u32 RAM_SIZE = (RAM_END - RAM_BASE);
 
 
