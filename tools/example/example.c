@@ -1,14 +1,14 @@
+#include "rv.h"
+
 #include <stdio.h>
 #include <string.h>
-
-#include "rv.h"
 
 #define RAM_BASE 0x80000000
 #define RAM_SIZE 0x100
 #include "ch32v003fun.h"
 
-rv_res bus_cb(void *user, rv_u32 addr, rv_u8 *data, rv_u32 is_store,
-              rv_u32 width);
+rv_res bus_cb(
+    void * user, rv_u32 addr, rv_u8 * data, rv_u32 is_store, rv_u32 width);
 
 /** @note Strange behaviour
  * There is 9 instructions in the program,
@@ -44,40 +44,40 @@ rv_u16 program[10] = {
     0x0073,
 };
 
-void display_all_registers(rv *cpu) {
-  for (int i = 10; i < 13; i++) {
-    //if (cpu->r[i] != 0)
-      printf("r%d: %d ", i, cpu->r[i]);
-  }
-  printf("\n");
+void display_all_registers(rv * cpu) {
+    for (int i = 10; i < 13; i++) {
+        // if (cpu->r[i] != 0)
+        printf("r%d: %d ", i, cpu->r[i]);
+    }
+    printf("\n");
 }
 
 int main(void) {
-  SystemInit();
-  printf("Hello, World!\n");
-  rv_u8 mem[RAM_SIZE];
-  rv cpu;
-  rv_init(&cpu, (void *)mem, &bus_cb);
-  memcpy((void *)mem, (void *)program, sizeof(program));
-  while (1) {
-    rv_u32 trap = rv_step(&cpu);
-    printf("PC: %X, ", cpu.pc);
-    printf("Trap: %X\n", trap);
+    SystemInit();
+    printf("Hello, World!\n");
+    rv_u8 mem[RAM_SIZE];
+    rv cpu;
+    rv_init(&cpu, (void *)mem, &bus_cb);
+    memcpy((void *)mem, (void *)program, sizeof(program));
+    while (1) {
+        rv_u32 trap = rv_step(&cpu);
+        printf("PC: %X, ", cpu.pc);
+        printf("Trap: %X\n", trap);
+        display_all_registers(&cpu);
+        if (trap == RV_EMECALL)
+            break;
+        Delay_Ms(200);
+    }
+    printf("Environment call @ %X\n", cpu.csr.mepc);
     display_all_registers(&cpu);
-    if (trap == RV_EMECALL)
-      break;
-    Delay_Ms(200);
-  }
-  printf("Environment call @ %X\n", cpu.csr.mepc);
-  display_all_registers(&cpu);
-  return 0;
+    return 0;
 }
 
-rv_res bus_cb(void *user, rv_u32 addr, rv_u8 *data, rv_u32 is_store,
-              rv_u32 width) {
-  rv_u8 *mem = (rv_u8 *)user + addr - RAM_BASE;
-  if (addr < RAM_BASE || addr + width >= RAM_BASE + RAM_SIZE)
-    return RV_BAD;
-  memcpy(is_store ? mem : data, is_store ? data : mem, width);
-  return RV_OK;
+rv_res bus_cb(
+    void * user, rv_u32 addr, rv_u8 * data, rv_u32 is_store, rv_u32 width) {
+    rv_u8 * mem = (rv_u8 *)user + addr - RAM_BASE;
+    if (addr < RAM_BASE || addr + width >= RAM_BASE + RAM_SIZE)
+        return RV_BAD;
+    memcpy(is_store ? mem : data, is_store ? data : mem, width);
+    return RV_OK;
 }
