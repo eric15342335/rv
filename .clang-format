@@ -1,11 +1,25 @@
-BasedOnStyle: LLVM
-ColumnLimit: 80
+﻿Language: Cpp
+
+UseTab: Never
 IndentWidth: 2
-AlignAfterOpenBracket: AlwaysBreak
-PointerAlignment: Left
-ContinuationIndentWidth: 4
-BreakBeforeBraces: Linux
+TabWidth: 2
+
+ColumnLimit: 120
+AlignAfterOpenBracket: DontAlign
+IndentCaseLabels: true
+
+BreakBeforeBraces: Custom
+BraceWrapping:
+  BeforeElse: true
+    
+DerivePointerAlignment: false
+PointerAlignment: Middle
+
+SortIncludes: true
+IncludeBlocks: Regroup
+
+MaxEmptyLinesToKeep: 1
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeParens: ControlStatements
 ReflowComments: true
-AlignArrayOfStructures: Left
-AlignConsecutiveMacros: Consecutive
-AlignTrailingComments: false
+SortUsingDeclarations: true
