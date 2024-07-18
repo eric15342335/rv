@@ -1,0 +1,12 @@
+{
+    // compiler path
+    "C_Cpp.default.compilerPath": "riscv-none-elf-gcc",
+    "files.associations": {
+        "Doxyfile": "doxyfile",
+        "string.h": "c",
+        "rv.h": "c",
+        "ch32v003fun.h": "c",
+        "stdio.h": "c",
+        "stdint.h": "c"
+    }
+}

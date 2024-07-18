@@ -1,4 +1,5 @@
-// This contains a copy of ch32v00x.h and core_riscv.h ch32v00x_conf.h and other misc functions  See copyright notice at end.
+/* SPDX-License-Identifier: MIT */
+// This contains a copy of ch32v00x.h and core_riscv.h ch32v00x_conf.h and other misc functions See copyright explanation at the end of the file.
 
 #ifndef __CH32V00x_H
 #define __CH32V00x_H
@@ -27,19 +28,29 @@
 	5. printf
 		printf, _write may be semihosted, or printed to UART.
 
-		poll_input, handle_debug_input may be used with semihsoting.
+		poll_input, handle_debug_input may be used with semihsoting to accept input from host.
 
-	For UART printf, on:
-		CH32V003, Port D5, 115200 8n1
-		CH32V203, Port A9, 115200 8n1
+		For UART printf, on:
+			CH32V003, Port D5, 115200 8n1
+			CH32V203, Port A9, 115200 8n1
 
-	Modifications can be made to SetupUart, or your own version as desired.
+		Modifications can be made to SetupUart, or your own version as desired.
+
+    6. ISR Control Routines
+		__enable_irq();    // For global interrupt enable
+		__disable_irq();   // For global interrupt disable
+		__isenabled_irq(); // For seeing if interrupts are enabled.
+		NVIC_EnableIRQ(IRQn_Type IRQn) // To enable a specific interrupt
+
+	7. Hardware MMIO structs, i.e.
+		SysTick->CNT = current system tick counter (can be Hclk or Hclk/8)
+		TIM2->CH1CVR = direct control over a PWM output
 */
 
 
 
-/*****************************************************************************
-	CH32V003 Fun Configs:
+/******************************************************************************
+ * CH32V003 Fun Configs; please define any non-default options in funconfig.h *
 
 #define FUNCONF_USE_PLL 1               // Use built-in 2x PLL 
 #define FUNCONF_USE_HSI 1               // Use HSI Internal Oscillator
@@ -209,6 +220,7 @@
 
 #ifndef __ASSEMBLER__  // Things before this can be used in assembly.
 
+#include <stdint.h>
 
 #ifdef __cplusplus
   #define     __I     volatile                /*!< defines 'read only' permissions      */
@@ -362,99 +374,106 @@ typedef enum IRQn
 #elif defined(CH32V30x)
 
 #ifdef CH32V30x_D8
-  TIM8_BRK_IRQn               = 59,      /* TIM8 Break Interrupt                                 */
-  TIM8_UP_IRQn                = 60,      /* TIM8 Update Interrupt                                */
-  TIM8_TRG_COM_IRQn           = 61,      /* TIM8 Trigger and Commutation Interrupt               */
-  TIM8_CC_IRQn                = 62,      /* TIM8 Capture Compare Interrupt                       */
-  RNG_IRQn                    = 63,      /* RNG global Interrupt                                 */
-  FSMC_IRQn                   = 64,      /* FSMC global Interrupt                                */
-  SDIO_IRQn                   = 65,      /* SDIO global Interrupt                                */
-  TIM5_IRQn                   = 66,      /* TIM5 global Interrupt                                */
-  SPI3_IRQn                   = 67,      /* SPI3 global Interrupt                                */
-  UART4_IRQn                  = 68,      /* UART4 global Interrupt                               */
-  UART5_IRQn                  = 69,      /* UART5 global Interrupt                               */
-  TIM6_IRQn                   = 70,      /* TIM6 global Interrupt                                */
-  TIM7_IRQn                   = 71,      /* TIM7 global Interrupt                                */
-  DMA2_Channel1_IRQn          = 72,      /* DMA2 Channel 1 global Interrupt                      */
-  DMA2_Channel2_IRQn          = 73,      /* DMA2 Channel 2 global Interrupt                      */
-  DMA2_Channel3_IRQn          = 74,      /* DMA2 Channel 3 global Interrupt                      */
-  DMA2_Channel4_IRQn          = 75,      /* DMA2 Channel 4 global Interrupt                      */
-  DMA2_Channel5_IRQn          = 76,      /* DMA2 Channel 5 global Interrupt                      */
-  OTG_FS_IRQn                 = 83,      /* OTGFS global Interrupt                               */
-  UART6_IRQn                  = 87,      /* UART6 global Interrupt                               */
-  UART7_IRQn                  = 88,      /* UART7 global Interrupt                               */
-  UART8_IRQn                  = 89,      /* UART8 global Interrupt                               */
-  TIM9_BRK_IRQn               = 90,      /* TIM9 Break Interrupt                                 */
-  TIM9_UP_IRQn                = 91,      /* TIM9 Update Interrupt                                */
-  TIM9_TRG_COM_IRQn           = 92,      /* TIM9 Trigger and Commutation Interrupt               */
-  TIM9_CC_IRQn                = 93,      /* TIM9 Capture Compare Interrupt                       */
-  TIM10_BRK_IRQn              = 94,      /* TIM10 Break Interrupt                                */
-  TIM10_UP_IRQn               = 95,      /* TIM10 Update Interrupt                               */
-  TIM10_TRG_COM_IRQn          = 96,      /* TIM10 Trigger and Commutation Interrupt              */
-  TIM10_CC_IRQn               = 97,      /* TIM10 Capture Compare Interrupt                      */
-  DMA2_Channel6_IRQn          = 98,      /* DMA2 Channel 6 global Interrupt                      */
-  DMA2_Channel7_IRQn          = 99,      /* DMA2 Channel 7 global Interrupt                      */
-  DMA2_Channel8_IRQn          = 100,     /* DMA2 Channel 8 global Interrupt                      */
-  DMA2_Channel9_IRQn          = 101,     /* DMA2 Channel 9 global Interrupt                      */
-  DMA2_Channel10_IRQn         = 102,     /* DMA2 Channel 10 global Interrupt                     */
-  DMA2_Channel11_IRQn         = 103,     /* DMA2 Channel 11 global Interrupt                     */
-
+	TIM8_BRK_IRQn               = 59,      /* TIM8 Break Interrupt                                 */
 #elif defined  (CH32V30x_D8C)
-  USBWakeUp_IRQn              = 58,      /* USB Device WakeUp from suspend through EXTI Line Interrupt */
-  TIM8_BRK_IRQn               = 59,      /* TIM8 Break Interrupt                                 */
-  TIM8_UP_IRQn                = 60,      /* TIM8 Update Interrupt                                */
-  TIM8_TRG_COM_IRQn           = 61,      /* TIM8 Trigger and Commutation Interrupt               */
-  TIM8_CC_IRQn                = 62,      /* TIM8 Capture Compare Interrupt                       */
-  RNG_IRQn                    = 63,      /* RNG global Interrupt                                 */
-  FSMC_IRQn                   = 64,      /* FSMC global Interrupt                                */
-  SDIO_IRQn                   = 65,      /* SDIO global Interrupt                                */
-  TIM5_IRQn                   = 66,      /* TIM5 global Interrupt                                */
-  SPI3_IRQn                   = 67,      /* SPI3 global Interrupt                                */
-  UART4_IRQn                  = 68,      /* UART4 global Interrupt                               */
-  UART5_IRQn                  = 69,      /* UART5 global Interrupt                               */
-  TIM6_IRQn                   = 70,      /* TIM6 global Interrupt                                */
-  TIM7_IRQn                   = 71,      /* TIM7 global Interrupt                                */
-  DMA2_Channel1_IRQn          = 72,      /* DMA2 Channel 1 global Interrupt                      */
-  DMA2_Channel2_IRQn          = 73,      /* DMA2 Channel 2 global Interrupt                      */
-  DMA2_Channel3_IRQn          = 74,      /* DMA2 Channel 3 global Interrupt                      */
-  DMA2_Channel4_IRQn          = 75,      /* DMA2 Channel 4 global Interrupt                      */
-  DMA2_Channel5_IRQn          = 76,      /* DMA2 Channel 5 global Interrupt                      */
-  ETH_IRQn                    = 77,      /* ETH global Interrupt                                 */
-  ETH_WKUP_IRQn               = 78,      /* ETH WakeUp Interrupt                                 */
-  CAN2_TX_IRQn                = 79,      /* CAN2 TX Interrupts                                   */
-  CAN2_RX0_IRQn               = 80,      /* CAN2 RX0 Interrupts                                  */
-  CAN2_RX1_IRQn               = 81,      /* CAN2 RX1 Interrupt                                   */
-  CAN2_SCE_IRQn               = 82,      /* CAN2 SCE Interrupt                                   */
-  OTG_FS_IRQn                 = 83,      /* OTGFS global Interrupt                               */
-  USBHSWakeup_IRQn            = 84,      /* USBHS WakeUp Interrupt                               */
-  USBHS_IRQn                  = 85,      /* USBHS global Interrupt                               */
-  DVP_IRQn                    = 86,      /* DVP global Interrupt                                 */
-  UART6_IRQn                  = 87,      /* UART6 global Interrupt                               */
-  UART7_IRQn                  = 88,      /* UART7 global Interrupt                               */
-  UART8_IRQn                  = 89,      /* UART8 global Interrupt                               */
-  TIM9_BRK_IRQn               = 90,      /* TIM9 Break Interrupt                                 */
-  TIM9_UP_IRQn                = 91,      /* TIM9 Update Interrupt                                */
-  TIM9_TRG_COM_IRQn           = 92,      /* TIM9 Trigger and Commutation Interrupt               */
-  TIM9_CC_IRQn                = 93,      /* TIM9 Capture Compare Interrupt                       */
-  TIM10_BRK_IRQn              = 94,      /* TIM10 Break Interrupt                                */
-  TIM10_UP_IRQn               = 95,      /* TIM10 Update Interrupt                               */
-  TIM10_TRG_COM_IRQn          = 96,      /* TIM10 Trigger and Commutation Interrupt              */
-  TIM10_CC_IRQn               = 97,      /* TIM10 Capture Compare Interrupt                      */
-  DMA2_Channel6_IRQn          = 98,      /* DMA2 Channel 6 global Interrupt                      */
-  DMA2_Channel7_IRQn          = 99,      /* DMA2 Channel 7 global Interrupt                      */
-  DMA2_Channel8_IRQn          = 100,     /* DMA2 Channel 8 global Interrupt                      */
-  DMA2_Channel9_IRQn          = 101,     /* DMA2 Channel 9 global Interrupt                      */
-  DMA2_Channel10_IRQn         = 102,     /* DMA2 Channel 10 global Interrupt                     */
-  DMA2_Channel11_IRQn         = 103,     /* DMA2 Channel 11 global Interrupt                     */
-
+	USBWakeUp_IRQn              = 58,      /* USB Device WakeUp from suspend through EXTI Line Interrupt */
+	TIM8_BRK_IRQn               = 59,      /* TIM8 Break Interrupt                                 */
+#endif
+	TIM8_UP_IRQn                = 60,      /* TIM8 Update Interrupt                                */
+	TIM8_TRG_COM_IRQn           = 61,      /* TIM8 Trigger and Commutation Interrupt               */
+	TIM8_CC_IRQn                = 62,      /* TIM8 Capture Compare Interrupt                       */
+	RNG_IRQn                    = 63,      /* RNG global Interrupt                                 */
+	FSMC_IRQn                   = 64,      /* FSMC global Interrupt                                */
+	SDIO_IRQn                   = 65,      /* SDIO global Interrupt                                */
+	TIM5_IRQn                   = 66,      /* TIM5 global Interrupt                                */
+	SPI3_IRQn                   = 67,      /* SPI3 global Interrupt                                */
+	UART4_IRQn                  = 68,      /* UART4 global Interrupt                               */
+	UART5_IRQn                  = 69,      /* UART5 global Interrupt                               */
 #endif
 
+#if defined(CH32V30x) || defined(CH32V20x)
+	TIM6_IRQn                   = 70,      /* TIM6 global Interrupt                                */
+	TIM7_IRQn                   = 71,      /* TIM7 global Interrupt                                */
+	DMA2_Channel1_IRQn          = 72,      /* DMA2 Channel 1 global Interrupt                      */
+	DMA2_Channel2_IRQn          = 73,      /* DMA2 Channel 2 global Interrupt                      */
+	DMA2_Channel3_IRQn          = 74,      /* DMA2 Channel 3 global Interrupt                      */
+	DMA2_Channel4_IRQn          = 75,      /* DMA2 Channel 4 global Interrupt                      */
+	DMA2_Channel5_IRQn          = 76,      /* DMA2 Channel 5 global Interrupt                      */
+	OTG_FS_IRQn                 = 83,      /* OTGFS global Interrupt NOTE: THIS APPEAR TO BE INCORRECT                */
+	UART6_IRQn                  = 87,      /* UART6 global Interrupt                               */
+	UART7_IRQn                  = 88,      /* UART7 global Interrupt                               */
+	UART8_IRQn                  = 89,      /* UART8 global Interrupt                               */
+	TIM9_BRK_IRQn               = 90,      /* TIM9 Break Interrupt                                 */
+	TIM9_UP_IRQn                = 91,      /* TIM9 Update Interrupt                                */
+	TIM9_TRG_COM_IRQn           = 92,      /* TIM9 Trigger and Commutation Interrupt               */
+	TIM9_CC_IRQn                = 93,      /* TIM9 Capture Compare Interrupt                       */
+	TIM10_BRK_IRQn              = 94,      /* TIM10 Break Interrupt                                */
+	TIM10_UP_IRQn               = 95,      /* TIM10 Update Interrupt                               */
+	TIM10_TRG_COM_IRQn          = 96,      /* TIM10 Trigger and Commutation Interrupt              */
+	TIM10_CC_IRQn               = 97,      /* TIM10 Capture Compare Interrupt                      */
+	DMA2_Channel6_IRQn          = 98,      /* DMA2 Channel 6 global Interrupt                      */
+	DMA2_Channel7_IRQn          = 99,      /* DMA2 Channel 7 global Interrupt                      */
+	DMA2_Channel8_IRQn          = 100,     /* DMA2 Channel 8 global Interrupt                      */
+	DMA2_Channel9_IRQn          = 101,     /* DMA2 Channel 9 global Interrupt                      */
+	DMA2_Channel10_IRQn         = 102,     /* DMA2 Channel 10 global Interrupt                     */
+	DMA2_Channel11_IRQn         = 103,     /* DMA2 Channel 11 global Interrupt                     */
 #endif
 
 } IRQn_Type;
 
-#include <stdint.h>
+
+#if defined (CH32V003) 
+
+/* memory mapped structure for SysTick */
+typedef struct
+{
+    __IO uint32_t CTLR;
+    __IO uint32_t SR;
+    __IO uint32_t CNT;
+    uint32_t RESERVED0;
+    __IO uint32_t CMP;
+    uint32_t RESERVED1;
+} SysTick_Type;
+
+#elif defined(CH32V20x) || defined(CH32V30x)
+
+/* memory mapped structure for SysTick */
+typedef struct
+{
+	__IO uint32_t CTLR;
+	__IO uint32_t SR;
+	__IO uint64_t CNT;
+	__IO uint64_t CMP;
+} SysTick_Type;
+
+#elif defined(CH32X03x)
+
+/* memory mapped structure for SysTick */
+typedef struct
+{
+  __IO uint32_t CTLR;
+  __IO uint32_t SR;
+  __IO uint32_t CNTL;
+  __IO uint32_t CNTH;
+  __IO uint32_t CMPL;
+  __IO uint32_t CMPH;
+} SysTick_Type;
+
+#elif defined(CH32V10x)
+
+/* memory mapped structure for SysTick */
+typedef struct
+{
+  __IO uint32_t CTLR;
+  __IO uint32_t CNTL;
+  __IO uint32_t CNTH;
+  __IO uint32_t CMPL;
+  __IO uint32_t CMPH;
+} SysTick_Type;
+
 #endif
+
+#endif /* __ASSEMBLER__*/
 
 #define HardFault_IRQn    EXC_IRQn
 
@@ -1000,11 +1019,10 @@ typedef struct
     __IO uint32_t APB1PCENR;
 #ifdef CH32V003
     __IO uint32_t RESERVED0;
-    __IO uint32_t RSTSCKR;
 #elif defined(CH32V10x) || defined(CH32V20x) || defined(CH32V30x)
 	__IO uint32_t BDCTLR;
-	__IO uint32_t RSTSCKR;
 #endif
+	__IO uint32_t RSTSCKR;
 #if defined(CH32V20x) || defined(CH32V30x)
 	__IO uint32_t AHBRSTR;
 	__IO uint32_t CFGR2;
@@ -1452,7 +1470,93 @@ typedef struct  __attribute__((packed))
 
 #endif	// #if defined(CH32V30x)
 
-/* USBFS Registers */
+/* USBD Full-Speed Device, Chapter 21.
+ NOTE: USBD and CAN controller share a dedicated 512-byte SRAM area for data
+ transmission and reception in the design, so when using USBD and CAN functions
+ at the same time, this shared area needs to be allocated reasonably to prevent
+ data conflicts. */
+
+typedef struct 
+{
+	__IO uint32_t ADDn_TX;
+	__IO uint32_t COUNTn_TX;
+	__IO uint32_t ADDn_RX;
+	__IO uint32_t COUNTn_RX;
+} USBD_BTABLE_TypeDef;
+
+typedef struct
+{
+	__IO uint32_t EPR[8];
+	__IO uint32_t RESERVED[8];
+	__IO uint32_t CNTR;
+	__IO uint32_t ISTR;
+	__IO uint32_t FNR;
+	__IO uint32_t DADDR;
+	__IO uint32_t BTABLE;
+} USBD_TypeDef;
+
+#define CAN_USBD_SHARED_BASE   ((PERIPH_BASE + 0x6000))
+#define USBD_BASE              ((PERIPH_BASE + 0x5C00))
+
+/* USBD_CNTR */
+#define USBD_CTRM      (1<<15)
+#define USBD_PMAOVRM   (1<<14)
+#define USBD_ERRM      (1<<13)
+#define USBD_WKUPM     (1<<12)
+#define USBD_SUSPM     (1<<11)
+#define USBD_RESETM    (1<<10)
+#define USBD_SOFM      (1<<9)
+#define USBD_ESOFM     (1<<8)
+#define USBD_RESUME    (1<<4)
+#define USBD_FSUP      (1<<3)
+#define USBD_LPMODE    (1<<2)
+#define USBD_PDWN      (1<<1)
+#define USBD_FRES      (1<<0)
+
+/* USBD_ISTR */
+#define USBD_CTR       (1<<15)
+#define USBD_PMAOVR    (1<<14)
+#define USBD_ERR       (1<<13)
+#define USBD_WKUP      (1<<12)
+#define USBD_SUSP      (1<<11)
+#define USBD_RESET     (1<<10)
+#define USBD_SOF       (1<<9)
+#define USBD_ESOF      (1<<8)
+#define USBD_DIR       (1<<4)
+#define USBD_EP_ID     (0xf)
+
+/* USBD_FNR */
+#define USBD_RXDP      (1<<15)
+#define USBD_RXDM      (1<<14)
+#define USBD_LCK       (1<<13)
+#define USBD_LSOF      (3<<11)
+#define USBD_FN        (0x7ff)
+
+/* USBD_DADDR */
+#define USBD_EF        (1<<7)
+#define USBD_ADD       (0x7f)
+
+/* USBD_EPRx */
+#define USBD_CTR_RX    (1<<15)
+#define USBD_DTOG_RX   (1<<14)
+#define USBD_STAT_RX   (3<<12)
+#define USBD_SETUP     (1<<11)
+#define USBD_EPTYPE    (3<<9)
+#define USBD_EPKIND    (1<<8)
+#define USBD_CTR_TX    (1<<7)
+#define USBD_DTOG_TX   (1<<6)
+#define USBD_STAT_TX   (3<<4)
+#define USBD_EA        (0xf)
+
+/* USBD_COUNTx_RX */
+#define USBD_BLSIZE    (1<<15)
+#define USBD_NUM_BLOCK (0x1f<<10)
+#define USBD_COUNTx_RX 0x2ff
+
+
+#define USBD           ((USBD_TypeDef *) USBD_BASE)
+
+/* USB-FS-OTG Registers, Chapter 23. */
 typedef struct
 {
 	__IO uint8_t  BASE_CTRL;
@@ -1461,7 +1565,7 @@ typedef struct
 	__IO uint8_t  DEV_ADDR;
 	__IO uint8_t  Reserve0;
 	__IO uint8_t  MIS_ST;
-	__IO uint8_t  INT_FG;
+	__IO uint8_t  INT_FG; // "Combined" register in some situations. (ST_FG)
 	__IO uint8_t  INT_ST;
 	__IO uint32_t RX_LEN;
 	__IO uint8_t  UEP4_1_MOD;
@@ -1505,6 +1609,154 @@ typedef struct
 	__IO uint32_t OTG_SR;
 } USBOTG_FS_TypeDef;
 
+/* R8_USB_CTRL */
+#define USBOTG_UC_HOST_MODE         (1<<7)
+#define USBOTG_UC_LOW_SPEED         (1<<6)
+#define USBOTG_UC_DEV_PU_EN         (1<<5)
+#define USBOTG_UC_SYS_CTRL          (1<<4)
+#define USBOTG_UC_INT_BUSY          (1<<3)
+#define USBOTG_UC_RESET_SIE         (1<<2)
+#define USBOTG_UC_CLR_ALL           (1<<1)
+#define USBOTG_UC_DMA_EN            (1<<0)
+
+/* R8_USB_INT_EN */
+#define USBOTG_UIE_DEV_NAK          (1<<6)
+#define USBOTG_UIE_FIFO_OV          (1<<4)
+#define USBOTG_UIE_HST_SOF          (1<<3)
+#define USBOTG_UIE_SUSPEND          (1<<2)
+#define USBOTG_UIE_TRANSFER         (1<<1)
+#define USBOTG_UIE_DETECT           (1<<0)
+#define USBOTG_UIE_BUS_RST          (1<<0)
+
+/* R8_USB_DEV_AD */
+#define USBOTG_UDA_GP_BIT           (1<<7)
+#define USBOTG_USB_ADDR             (1<<6)
+
+/* R8_USB_MIS_ST */
+#define USBOTG_UMS_SOF_PRES         (1<<7)
+#define USBOTG_UMS_SOF_ACT          (1<<6)
+#define USBOTG_UMS_SIE_FREE         (1<<5)
+#define USBOTG_UMS_R_FIFO_RDY       (1<<4)
+#define USBOTG_UMS_BUS_RESET        (1<<3)
+#define USBOTG_UMS_SUSPEND          (1<<2)
+#define USBOTG_UMS_DM_LEVEL         (1<<1)
+#define USBOTG_UMS_DEV_ATTACH       (1<<0)
+
+/* R8_USB_INT_FG */
+#define USBOTG_U_IS_NAK             (1<<7)
+#define USBOTG_U_TOG_OK             (1<<6)
+#define USBOTG_U_SIE_FREE           (1<<5)
+#define USBOTG_UIF_FIFO_OV          (1<<4)
+#define USBOTG_UIF_HST_SOF          (1<<3)
+#define USBOTG_UIF_SUSPEND          (1<<2)
+#define USBOTG_UIF_TRANSFER         (1<<1)
+#define USBOTG_UIF_DETECT           (1<<0)
+#define USBOTG_UIF_BUS_RST          (1<<0)
+
+/* R8_USB_INT_ST */
+#define USBOTG_UIS_IS_NAK           (1<<7)
+#define USBOTG_UIS_TOG_OK           (1<<6)
+#define USBOTG_UIS_TOKEN            (3<<4)
+#define USBOTG_UIS_ENDP             0xf
+#define USBOTG_UIS_H_RES            0xf
+
+/* R32_USB_OTG_CR */
+#define USBOTG_CR_SESS_VTH          (1<<5)
+#define USBOTG_CR_VBUS_VTH          (1<<4)
+#define USBOTG_CR_OTG_EN            (1<<3)
+#define USBOTG_CR_IDPU              (1<<2)
+#define USBOTG_CR_CHARGE_VBUS       (1<<1)
+#define USBOTG_CR_DISCHAR_VBUS      (1<<0)
+
+/* R32_USB_OTG_SR */
+#define USBOTG_SR_ID_DIG            (1<<3)
+#define USBOTG_SR_SESS_END          (1<<2)
+#define USBOTG_SR_SESS_VLD          (1<<1)
+#define USBOTG_SR_VBUS_VLD          (1<<0)
+
+/* R8_UEPn_TX_CTRL */
+#define USBOTG_UEP_T_AUTO_TOG       (1<<3)
+#define USBOTG_UEP_T_TOG            (1<<2)
+#define USBOTG_UEP_T_RES_MASK       (3<<0)      // bit mask of handshake response type for USB endpoint X transmittal (IN)
+#define USBOTG_UEP_T_RES_ACK        (0<<1)
+#define USBOTG_UEP_T_RES_NONE       (1<<0)
+#define USBOTG_UEP_T_RES_NAK        (1<<1)
+#define USBOTG_UEP_T_RES_STALL      (3<<0)
+
+#define USBOTG_UEP_R_AUTO_TOG       (1<<3)      // enable automatic toggle after successful transfer completion on endpoint 1/2/3: 0=manual toggle, 1=automatic toggle
+#define USBOTG_UEP_R_TOG            (1<<2)      // expected data toggle flag of USB endpoint X receiving (OUT): 0=DATA0, 1=DATA1
+#define USBOTG_UEP_R_RES_MASK       (3<<0)      // bit mask of handshake response type for USB endpoint X receiving (OUT)
+#define USBOTG_UEP_R_RES_ACK        (0<<1)
+#define USBOTG_UEP_R_RES_NONE       (1<<0)
+#define USBOTG_UEP_R_RES_NAK        (1<<1)
+#define USBOTG_UEP_R_RES_STALL      (3<<0)
+
+
+
+/* R8_UEPn_ RX_CTRL */
+#define USBOTG_UEP_R_AUTO_TOG       (1<<3)
+#define USBOTG_UEP_R_TOG            (1<<2)
+#define USBOTG_UEP_R_RES            (3<<0)
+
+/* R8_UEP7_MOD */
+#define USBOTG_UEP7_RX_EN           (1<<3)
+#define USBOTG_UEP7_TX_EN           (1<<2)
+#define USBOTG_UEP7_BUF_MOD         (1<<0)
+
+/* R8_UEP5_6_MOD */
+#define USBOTG_UEP6_RX_EN           (1<<7)
+#define USBOTG_UEP6_TX_EN           (1<<6)
+#define USBOTG_UEP6_BUF_MOD         (1<<4)
+#define USBOTG_UEP5_RX_EN           (1<<3)
+#define USBOTG_UEP5_TX_EN           (1<<2)
+#define USBOTG_UEP5_BUF_MOD         (1<<0)
+
+/* R8_UEP2_3_MOD */
+#define USBOTG_UEP3_RX_EN           (1<<7)
+#define USBOTG_UEP3_TX_EN           (1<<6)
+#define USBOTG_UEP3_BUF_MOD         (1<<4)
+#define USBOTG_UEP2_RX_EN           (1<<3)
+#define USBOTG_UEP2_TX_EN           (1<<2)
+#define USBOTG_UEP2_BUF_MOD         (1<<0)
+
+/* R8_UEP4_1_MOD */
+#define USBOTG_UEP1_RX_EN           (1<<7)
+#define USBOTG_UEP1_TX_EN           (1<<6)
+#define USBOTG_UEP1_BUF_MOD         (1<<4)
+#define USBOTG_UEP4_RX_EN           (1<<3)
+#define USBOTG_UEP4_TX_EN           (1<<2)
+#define USBOTG_UEP4_BUF_MOD         (1<<0)
+
+/* R8_UDEV_CTRL */
+#define USBOTG_UD_PD_DIS            (1<<7)
+#define USBOTG_UD_DP_PIN            (1<<5)
+#define USBOTG_UD_DM_PIN            (1<<4)
+#define USBOTG_UD_LOW_SPEED         (1<<2)
+#define USBOTG_UD_GP_BIT            (1<<1)
+#define USBOTG_UD_PORT_EN           (1<<0)
+
+
+#define USBFS_UDA_GP_BIT            0x80
+#define USBFS_USB_ADDR_MASK         0x7F
+
+#define DEF_USBD_UEP0_SIZE		   64	 /* usb hs/fs device end-point 0 size */
+#define UEP_SIZE 64
+
+#define DEF_UEP_IN                  0x80
+#define DEF_UEP_OUT                 0x00
+#define DEF_UEP_BUSY                0x01
+#define DEF_UEP_FREE                0x00
+
+#define DEF_UEP0 0
+#define DEF_UEP1 1
+#define DEF_UEP2 2
+#define DEF_UEP3 3
+#define DEF_UEP4 4
+#define DEF_UEP5 5
+#define DEF_UEP6 6
+#define DEF_UEP7 7
+#define UNUM_EP 8
+
 typedef struct
 {
 	__IO uint8_t   BASE_CTRL;
@@ -1546,6 +1798,40 @@ typedef struct
 	__IO uint32_t  OTG_CR;
 	__IO uint32_t  OTG_SR;
 } USBOTG_FS_HOST_TypeDef;
+
+/* R8_UHOST_CTRL */
+#define USBOTG_UH_PD_DIS       (1<<7)
+#define USBOTG_UH_DP_PIN       (1<<5)
+#define USBOTG_UH_DM_PIN       (1<<4)
+#define USBOTG_UH_LOW_SPEED    (1<<2)
+#define USBOTG_UH_BUS_RESET    (1<<1)
+#define USBOTG_UH_PORT_EN      (1<<0)
+
+/* R32_UH_EP_MOD */
+#define USBOTG_UH_EP_TX_EN     (1<<6)
+#define USBOTG_UH_EP_TBUF_MOD  (1<<4)
+#define USBOTG_UH_EP_RX_EN     (1<<3)
+#define USBOTG_UH_EP_RBUF_MOD  (1<<0)
+
+/* R16_UH_SETUP */
+#define USBOTG_UH_PRE_PID_EN   (1<<10)
+#define USBOTG_UH_SOF_EN       (1<<2)
+
+/* R8_UH_EP_PID */
+#define USBOTG_UH_TOKEN        (0xf<<4)
+#define USBOTG_UH_ENDP         (0xf<<0)
+
+/* R8_UH_RX_CTRL */
+#define USBOTG_UH_R_AUTO_TOG   (1<<3)
+#define USBOTG_UH_R_TOG        (1<<2)
+#define USBOTG_UH_R_RES        (1<<0)
+
+/* R8_UH_TX_CTRL */
+#define USBOTG_UH_T_AUTO_TOG   (1<<3)
+#define USBOTG_UH_T_TOG        (1<<2)
+#define USBOTG_UH_T_RES        (1<<0)
+
+
 
 #if defined(CH32V30x)
 /* Ethernet MAC */
@@ -6693,27 +6979,6 @@ with 00h to 64 bytes, otherwise the short packet is filled with 60 bytes of 0, a
 
 #endif /* __CH32V00x_H */
 
-/*
- * This file contains the contents of various parts of the evt.
- * 
- * The collection of this file was generated by cnlohr, 2023-02-18
- * and AlexanderMandera, 2023-06-23
- *
- * Contents subject to below copyright where applicable by law. 
- *
- * (IANAL, BUT Because it is an interface, it is unlikely protected by copyright)
- *
- *********************************** (C) COPYRIGHT *******************************
- * File Name          : ------------------
- * Author             : WCH
- * Version            : V1.0.0
- * Date               : 2020/08/08
- * Description        : Library configuration file.
-*********************************************************************************
-* Copyright (c) 2021 Nanjing Qinheng Microelectronics Co., Ltd.
-* Attention: This software (modified or not) and binary are used for 
-* microcontroller manufactured by Nanjing Qinheng Microelectronics.
-*******************************************************************************/
 #ifndef __CH32V00x_CONF_H
 #define __CH32V00x_CONF_H
 
@@ -11760,6 +12025,7 @@ typedef volatile unsigned long *PUINT32V;
 	
 ///////////////////////////////////////////////////////////////////////////////////////////////	
 ///////////////////////////////////////////////////////////////////////////////////////////////
+// Code in this section was originally from __CORE_RISCV_H__
 
 #ifndef __CORE_RISCV_H__
 #define __CORE_RISCV_H__
@@ -11782,6 +12048,7 @@ typedef volatile unsigned long *PUINT32V;
   #define __INLINE    inline  /*!< inline keyword for TASKING Compiler   */
 
 #endif
+
 
 #ifdef __cplusplus
  extern "C" {
@@ -11868,59 +12135,15 @@ typedef struct{
     __IO uint32_t SCTLR;
 }PFIC_Type;
 
-#if defined (CH32V003) 
-
-/* memory mapped structure for SysTick */
-typedef struct
-{
-    __IO uint32_t CTLR;
-    __IO uint32_t SR;
-    __IO uint32_t CNT;
-    uint32_t RESERVED0;
-    __IO uint32_t CMP;
-    uint32_t RESERVED1;
-} SysTick_Type;
-
-#elif defined(CH32V20x) || defined(CH32V30x)
-
-/* memory mapped structure for SysTick */
-typedef struct
-{
-	__IO uint32_t CTLR;
-	__IO uint32_t SR;
-	__IO uint64_t CNT;
-	__IO uint64_t CMP;
-} SysTick_Type;
-
-#elif defined(CH32X03x)
-
-/* memory mapped structure for SysTick */
-typedef struct
-{
-  __IO uint32_t CTLR;
-  __IO uint32_t SR;
-  __IO uint32_t CNTL;
-  __IO uint32_t CNTH;
-  __IO uint32_t CMPL;
-  __IO uint32_t CMPH;
-} SysTick_Type;
-
-#elif defined(CH32V10x)
-
-/* memory mapped structure for SysTick */
-typedef struct
-{
-  __IO uint32_t CTLR;
-  __IO uint32_t CNTL;
-  __IO uint32_t CNTH;
-  __IO uint32_t CMPL;
-  __IO uint32_t CMPH;
-} SysTick_Type;
-
 #endif
 
-
-#endif
+/* some bit definitions for systick regs */
+#define SYSTICK_SR_CNTIF (1<<0)
+#define SYSTICK_CTLR_STE (1<<0)
+#define SYSTICK_CTLR_STIE (1<<1)
+#define SYSTICK_CTLR_STCLK (1<<2)
+#define SYSTICK_CTLR_STRE (1<<3)
+#define SYSTICK_CTLR_SWIE (1<<31)
 
 #define PFIC            ((PFIC_Type *) PFIC_BASE )
 #define NVIC            PFIC
@@ -11942,49 +12165,45 @@ typedef struct
  */
 RV_STATIC_INLINE void __enable_irq()
 {
-  uint32_t result;
+	uint32_t result;
 
-    __asm volatile(
+	__ASM volatile(
 #if __GNUC__ > 10
 		".option arch, +zicsr\n"
 #endif
 		"csrr %0," "mstatus": "=r"(result));
-  result |= 0x88;
-  __asm volatile ("csrw mstatus, %0" : : "r" (result) );
+	result |= 0x88;
+	__ASM volatile ("csrw mstatus, %0" : : "r" (result) );
 }
 
 /*********************************************************************
  * @fn      __disable_irq
- *
  * @brief   Disable Global Interrupt
- *
  * @return  none
  */
 RV_STATIC_INLINE void __disable_irq()
 {
-  uint32_t result;
+	uint32_t result;
 
-    __asm volatile(
+    __ASM volatile(
 #if __GNUC__ > 10
 		".option arch, +zicsr\n"
 #endif
 		"csrr %0," "mstatus": "=r"(result));
-  result &= ~0x88;
-  __asm volatile ("csrw mstatus, %0" : : "r" (result) );
+	result &= ~0x88;
+	__ASM volatile ("csrw mstatus, %0" : : "r" (result) );
 }
 
 /*********************************************************************
  * @fn      __isenabled_irq
- *
  * @brief   Is Global Interrupt enabled
- *
  * @return  1: yes, 0: no
  */
 RV_STATIC_INLINE uint8_t __isenabled_irq(void)
 {
     uint32_t result;
 
-    __asm volatile(
+    __ASM volatile(
 #if __GNUC__ > 10
     ".option arch, +zicsr\n"
 #endif
@@ -11994,135 +12213,109 @@ RV_STATIC_INLINE uint8_t __isenabled_irq(void)
 
 /*********************************************************************
  * @fn      __get_cpu_sp
- *
  * @brief   Get stack pointer
- *
  * @return  stack pointer
  */
 RV_STATIC_INLINE uint32_t __get_cpu_sp(void);
 RV_STATIC_INLINE uint32_t __get_cpu_sp(void)
 {
-  uint32_t result;
+	uint32_t result;
 
-  __asm volatile(
+	__ASM volatile(
 #if __GNUC__ > 10
     ".option arch, +zicsr\n"
 #endif
-  "mv %0, sp" : "=r"(result));
-  return result;
+	"mv %0, sp" : "=r"(result));
+	return result;
 }
 
 /*********************************************************************
  * @fn      __NOP
- *
  * @brief   nop
- *
  * @return  none
  */
 RV_STATIC_INLINE void __NOP()
 {
-  __asm volatile ("nop");
+	__ASM volatile ("nop");
 }
 
 /*********************************************************************
  * @fn       NVIC_EnableIRQ
- *
  * @brief   Disable Interrupt
- *
  * @param   IRQn - Interrupt Numbers
- *
  * @return  none
  */
 RV_STATIC_INLINE void NVIC_EnableIRQ(IRQn_Type IRQn)
 {
-  NVIC->IENR[((uint32_t)(IRQn) >> 5)] = (1 << ((uint32_t)(IRQn) & 0x1F));
+	NVIC->IENR[((uint32_t)(IRQn) >> 5)] = (1 << ((uint32_t)(IRQn) & 0x1F));
 }
 
 /*********************************************************************
  * @fn       NVIC_DisableIRQ
- *
  * @brief   Disable Interrupt
- *
  * @param   IRQn - Interrupt Numbers
- *
  * @return  none
  */
 RV_STATIC_INLINE void NVIC_DisableIRQ(IRQn_Type IRQn)
 {
-  NVIC->IRER[((uint32_t)(IRQn) >> 5)] = (1 << ((uint32_t)(IRQn) & 0x1F));
+	NVIC->IRER[((uint32_t)(IRQn) >> 5)] = (1 << ((uint32_t)(IRQn) & 0x1F));
 }
 
 /*********************************************************************
  * @fn       NVIC_GetStatusIRQ
- *
  * @brief   Get Interrupt Enable State
- *
  * @param   IRQn - Interrupt Numbers
- *
  * @return  1 - 1: Interrupt Pending Enable
  *                0 - Interrupt Pending Disable
  */
 RV_STATIC_INLINE uint32_t NVIC_GetStatusIRQ(IRQn_Type IRQn)
 {
-  return((uint32_t) ((NVIC->ISR[(uint32_t)(IRQn) >> 5] & (1 << ((uint32_t)(IRQn) & 0x1F)))?1:0));
+	return((uint32_t) ((NVIC->ISR[(uint32_t)(IRQn) >> 5] & (1 << ((uint32_t)(IRQn) & 0x1F)))?1:0));
 }
 
 /*********************************************************************
  * @fn      NVIC_GetPendingIRQ
- *
  * @brief   Get Interrupt Pending State
- *
  * @param   IRQn - Interrupt Numbers
- *
  * @return  1 - 1: Interrupt Pending Enable
  *                0 - Interrupt Pending Disable
  */
 RV_STATIC_INLINE uint32_t NVIC_GetPendingIRQ(IRQn_Type IRQn)
 {
-  return((uint32_t) ((NVIC->IPR[(uint32_t)(IRQn) >> 5] & (1 << ((uint32_t)(IRQn) & 0x1F)))?1:0));
+	return((uint32_t) ((NVIC->IPR[(uint32_t)(IRQn) >> 5] & (1 << ((uint32_t)(IRQn) & 0x1F)))?1:0));
 }
 
 /*********************************************************************
  * @fn      NVIC_SetPendingIRQ
- *
  * @brief   Set Interrupt Pending
- *
  * @param   IRQn - Interrupt Numbers
- *
  * @return  none
  */
 RV_STATIC_INLINE void NVIC_SetPendingIRQ(IRQn_Type IRQn)
 {
-  NVIC->IPSR[((uint32_t)(IRQn) >> 5)] = (1 << ((uint32_t)(IRQn) & 0x1F));
+	NVIC->IPSR[((uint32_t)(IRQn) >> 5)] = (1 << ((uint32_t)(IRQn) & 0x1F));
 }
 
 /*********************************************************************
  * @fn      NVIC_ClearPendingIRQ
- *
  * @brief   Clear Interrupt Pending
- *
  * @param   IRQn - Interrupt Numbers
- *
  * @return  none
  */
 RV_STATIC_INLINE void NVIC_ClearPendingIRQ(IRQn_Type IRQn)
 {
-  NVIC->IPRR[((uint32_t)(IRQn) >> 5)] = (1 << ((uint32_t)(IRQn) & 0x1F));
+	NVIC->IPRR[((uint32_t)(IRQn) >> 5)] = (1 << ((uint32_t)(IRQn) & 0x1F));
 }
 
 /*********************************************************************
  * @fn      NVIC_GetActive
- *
  * @brief   Get Interrupt Active State
- *
  * @param   IRQn - Interrupt Numbers
- *
  * @return  1 - Interrupt Active
- *                0 - Interrupt No Active
  */
 RV_STATIC_INLINE uint32_t NVIC_GetActive(IRQn_Type IRQn)
 {
-  return((uint32_t)((NVIC->IACTR[(uint32_t)(IRQn) >> 5] & (1 << ((uint32_t)(IRQn) & 0x1F)))?1:0));
+	return((uint32_t)((NVIC->IACTR[(uint32_t)(IRQn) >> 5] & (1 << ((uint32_t)(IRQn) & 0x1F)))?1:0));
 }
 
 /*********************************************************************
@@ -12139,7 +12332,7 @@ RV_STATIC_INLINE uint32_t NVIC_GetActive(IRQn_Type IRQn)
  */
 RV_STATIC_INLINE void NVIC_SetPriority(IRQn_Type IRQn, uint8_t priority)
 {
-  NVIC->IPRIOR[(uint32_t)(IRQn)] = priority;
+	NVIC->IPRIOR[(uint32_t)(IRQn)] = priority;
 }
 
 /*********************************************************************
@@ -12185,22 +12378,18 @@ RV_STATIC_INLINE void NVIC_restore_IRQs(uint32_t old_state)
 
 /*********************************************************************
  * @fn       __WFI
- *
  * @brief   Wait for Interrupt
- *
  * @return  none
  */
 __attribute__( ( always_inline ) ) RV_STATIC_INLINE void __WFI(void)
 {
-  NVIC->SCTLR &= ~(1<<3);   // wfi
-  asm volatile ("wfi");
+	NVIC->SCTLR &= ~(1<<3);   // wfi
+	__ASM volatile ("wfi");
 }
 
 /*********************************************************************
  * @fn       __WFE
- *
  * @brief   Wait for Events
- *
  * @return  none
  */
 __attribute__( ( always_inline ) ) RV_STATIC_INLINE void __WFE(void)
@@ -12210,15 +12399,13 @@ __attribute__( ( always_inline ) ) RV_STATIC_INLINE void __WFE(void)
   t = NVIC->SCTLR;
   NVIC->SCTLR |= (1<<3)|(1<<5);     // (wfi->wfe)+(__sev)
   NVIC->SCTLR = (NVIC->SCTLR & ~(1<<5)) | ( t & (1<<5));
-  asm volatile ("wfi");
-  asm volatile ("wfi");
+  __ASM volatile ("wfi");
+  __ASM volatile ("wfi");
 }
 
 /*********************************************************************
  * @fn      SetVTFIRQ
- *
  * @brief   Set VTF Interrupt
- *
  * @param   addr - VTF interrupt service function base address.
  *                  IRQn - Interrupt Numbers
  *                  num - VTF Interrupt Numbers
@@ -12227,24 +12414,22 @@ __attribute__( ( always_inline ) ) RV_STATIC_INLINE void __WFE(void)
  * @return  none
  */
 RV_STATIC_INLINE void SetVTFIRQ(uint32_t addr, IRQn_Type IRQn, uint8_t num, FunctionalState NewState){
-  if(num > 1)  return ;
+	if(num > 1)  return ;
 
-  if (NewState != DISABLE)
-  {
-      NVIC->VTFIDR[num] = IRQn;
-      NVIC->VTFADDR[num] = ((addr&0xFFFFFFFE)|0x1);
-  }
-  else{
-      NVIC->VTFIDR[num] = IRQn;
-      NVIC->VTFADDR[num] = ((addr&0xFFFFFFFE)&(~0x1));
-  }
+	if (NewState != DISABLE)
+	{
+		NVIC->VTFIDR[num] = IRQn;
+		NVIC->VTFADDR[num] = ((addr&0xFFFFFFFE)|0x1);
+	}
+	else{
+		NVIC->VTFIDR[num] = IRQn;
+		NVIC->VTFADDR[num] = ((addr&0xFFFFFFFE)&(~0x1));
+	}
 }
 
 /*********************************************************************
  * @fn       NVIC_SystemReset
- *
  * @brief   Initiate a system reset request
- *
  * @return  none
  */
 RV_STATIC_INLINE void NVIC_SystemReset(void)
@@ -12255,14 +12440,14 @@ RV_STATIC_INLINE void NVIC_SystemReset(void)
 // For configuring INTSYSCR, for interrupt nesting + hardware stack enable.
 static inline uint32_t __get_INTSYSCR(void)
 {
-    uint32_t result;
-    asm volatile("csrr %0, 0x804": "=r"(result));
-    return (result);
+	uint32_t result;
+	__ASM volatile("csrr %0, 0x804": "=r"(result));
+	return (result);
 }
 
 static inline void __set_INTSYSCR( uint32_t value )
 {
-    asm volatile("csrw 0x804, %0" : : "r"(value));
+    __ASM volatile("csrw 0x804, %0" : : "r"(value));
 }
 
 #if defined(CH32V30x)
@@ -12275,141 +12460,114 @@ static inline void __set_INTSYSCR( uint32_t value )
  */
 static inline uint32_t __get_FFLAGS(void)
 {
-  uint32_t result;
-
-  __ASM volatile ( "csrr %0," "fflags" : "=r" (result) );
-  return (result);
+	uint32_t result;
+	__ASM volatile ( "csrr %0," "fflags" : "=r" (result) );
+	return (result);
 }
 
 /*********************************************************************
  * @fn      __set_FFLAGS
- *
  * @brief   Set the Floating-Point Accrued Exceptions
- *
  * @param   value  - set FFLAGS value
- *
  * @return  none
  */
 static inline void __set_FFLAGS(uint32_t value)
 {
-  __ASM volatile ("csrw fflags, %0" : : "r" (value) );
+	__ASM volatile ("csrw fflags, %0" : : "r" (value) );
 }
 
 /*********************************************************************
  * @fn      __get_FRM
- *
  * @brief   Return the Floating-Point Dynamic Rounding Mode
- *
  * @return  frm value
  */
 static inline uint32_t __get_FRM(void)
 {
-  uint32_t result;
-
-  __ASM volatile ( "csrr %0," "frm" : "=r" (result) );
-  return (result);
+	uint32_t result;
+	__ASM volatile ( "csrr %0," "frm" : "=r" (result) );
+	return (result);
 }
 
 /*********************************************************************
  * @fn      __set_FRM
- *
  * @brief   Set the Floating-Point Dynamic Rounding Mode
- *
  * @param   value  - set frm value
- *
  * @return  none
  */
 static inline void __set_FRM(uint32_t value)
 {
-  __ASM volatile ("csrw frm, %0" : : "r" (value) );
+	__ASM volatile ("csrw frm, %0" : : "r" (value) );
 }
 
 /*********************************************************************
  * @fn      __get_FCSR
- *
  * @brief   Return the Floating-Point Control and Status Register
- *
  * @return  fcsr value
  */
 static inline uint32_t __get_FCSR(void)
 {
-  uint32_t result;
-
-  __ASM volatile ( "csrr %0," "fcsr" : "=r" (result) );
-  return (result);
+	uint32_t result;
+	__ASM volatile ( "csrr %0," "fcsr" : "=r" (result) );
+	return (result);
 }
 
 /*********************************************************************
  * @fn      __set_FCSR
- *
  * @brief   Set the Floating-Point Dynamic Rounding Mode
- *
  * @param   value  - set fcsr value
- *
  * @return  none
  */
 static inline void __set_FCSR(uint32_t value)
 {
-  __ASM volatile ("csrw fcsr, %0" : : "r" (value) );
+	__ASM volatile ("csrw fcsr, %0" : : "r" (value) );
 }
-#endif
+
+#endif // CH32V30x
 
 /*********************************************************************
  * @fn      __get_MSTATUS
- *
  * @brief   Return the Machine Status Register
- *
  * @return  mstatus value
  */
 static inline uint32_t __get_MSTATUS(void)
 {
-    uint32_t result;
-
-    __ASM volatile("csrr %0," "mstatus": "=r"(result));
-    return (result);
+	uint32_t result;
+	__ASM volatile("csrr %0," "mstatus": "=r"(result));
+	return (result);
 }
 
 /*********************************************************************
  * @fn      __set_MSTATUS
- *
  * @brief   Set the Machine Status Register
- *
  * @param   value  - set mstatus value
- *
  * @return  none
  */
 static inline void __set_MSTATUS(uint32_t value)
 {
-    __ASM volatile("csrw mstatus, %0" : : "r"(value));
+	__ASM volatile("csrw mstatus, %0" : : "r"(value));
 }
 
 /*********************************************************************
  * @fn      __get_MISA
- *
  * @brief   Return the Machine ISA Register
- *
  * @return  misa value
  */
 static inline uint32_t __get_MISA(void)
 {
-    uint32_t result;
-
-    __ASM volatile("csrr %0,""misa" : "=r"(result));
-    return (result);
+	uint32_t result;
+	__ASM volatile("csrr %0,""misa" : "=r"(result));
+	return (result);
 }
 
 /*********************************************************************
  * @fn      __set_MISA
- *
  * @brief   Set the Machine ISA Register
- *
  * @param   value  - set misa value
- *
  * @return  none
  */
 static inline void __set_MISA(uint32_t value)
 {
-    __ASM volatile("csrw misa, %0" : : "r"(value));
+	__ASM volatile("csrw misa, %0" : : "r"(value));
 }
 
 /*********************************************************************
@@ -12421,116 +12579,96 @@ static inline void __set_MISA(uint32_t value)
  */
 static inline uint32_t __get_MTVEC(void)
 {
-    uint32_t result;
-
-    __ASM volatile("csrr %0," "mtvec": "=r"(result));
-    return (result);
+	uint32_t result;
+	__ASM volatile("csrr %0," "mtvec": "=r"(result));
+	return (result);
 }
 
 /*********************************************************************
  * @fn      __set_MTVEC
- *
  * @brief   Set the Machine Trap-Vector Base-Address Register
- *
  * @param   value  - set mtvec value
- *
  * @return  none
  */
 static inline void __set_MTVEC(uint32_t value)
 {
-    __ASM volatile("csrw mtvec, %0":: "r"(value));
+	__ASM volatile("csrw mtvec, %0":: "r"(value));
 }
 
 /*********************************************************************
  * @fn      __get_MSCRATCH
- *
  * @brief   Return the Machine Seratch Register
- *
  * @return  mscratch value
  */
 static inline uint32_t __get_MSCRATCH(void)
 {
-    uint32_t result;
-
-    __ASM volatile("csrr %0," "mscratch" : "=r"(result));
-    return (result);
+	uint32_t result;
+	__ASM volatile("csrr %0," "mscratch" : "=r"(result));
+	return (result);
 }
 
 /*********************************************************************
  * @fn      __set_MSCRATCH
- *
  * @brief   Set the Machine Seratch Register
- *
  * @param   value  - set mscratch value
- *
  * @return  none
  */
 static inline void __set_MSCRATCH(uint32_t value)
 {
-    __ASM volatile("csrw mscratch, %0" : : "r"(value));
+	__ASM volatile("csrw mscratch, %0" : : "r"(value));
 }
 
 /*********************************************************************
  * @fn      __get_MEPC
- *
  * @brief   Return the Machine Exception Program Register
- *
  * @return  mepc value
  */
 static inline uint32_t __get_MEPC(void)
 {
     uint32_t result;
 
-    __ASM volatile("csrr %0," "mepc" : "=r"(result));
+	__ASM volatile("csrr %0," "mepc" : "=r"(result));
     return (result);
 }
 
 /*********************************************************************
  * @fn      __set_MEPC
- *
  * @brief   Set the Machine Exception Program Register
- *
  * @return  mepc value
  */
 static inline void __set_MEPC(uint32_t value)
 {
-    __ASM volatile("csrw mepc, %0" : : "r"(value));
+	__ASM volatile("csrw mepc, %0" : : "r"(value));
 }
 
 /*********************************************************************
  * @fn      __get_MCAUSE
- *
  * @brief   Return the Machine Cause Register
- *
  * @return  mcause value
  */
 static inline uint32_t __get_MCAUSE(void)
 {
     uint32_t result;
 
-    __ASM volatile("csrr %0," "mcause": "=r"(result));
+	__ASM volatile("csrr %0," "mcause": "=r"(result));
     return (result);
 }
 
 /*********************************************************************
  * @fn      __set_MCAUSE
- *
  * @brief   Set the Machine Cause Register
- *
  * @return  mcause value
  */
 static inline void __set_MCAUSE(uint32_t value)
 {
-    __ASM volatile("csrw mcause, %0":: "r"(value));
+	__ASM volatile("csrw mcause, %0":: "r"(value));
 }
 
 #if defined(CH32V10x) || defined(CH32V20x) || defined(CH32V30x)
 
 /*********************************************************************
  * @fn      __get_MTVAL
- *
  * @brief   Return the Machine Trap Value Register
- *
  * @return  mtval value
  */
 static inline uint32_t __get_MTVAL(void)
@@ -12543,9 +12681,7 @@ static inline uint32_t __get_MTVAL(void)
 
 /*********************************************************************
  * @fn      __set_MTVAL
- *
  * @brief   Set the Machine Trap Value Register
- *
  * @return  mtval value
  */
 static inline void __set_MTVAL(uint32_t value)
@@ -12557,90 +12693,64 @@ static inline void __set_MTVAL(uint32_t value)
 
 /*********************************************************************
  * @fn      __get_MVENDORID
- *
  * @brief   Return Vendor ID Register
- *
  * @return  mvendorid value
  */
 static inline uint32_t __get_MVENDORID(void)
 {
-    uint32_t result;
-
-    __ASM volatile("csrr %0,""mvendorid": "=r"(result));
-    return (result);
+	uint32_t result;
+	__ASM volatile("csrr %0,""mvendorid": "=r"(result));
+	return (result);
 }
 
 /*********************************************************************
  * @fn      __get_MARCHID
- *
  * @brief   Return Machine Architecture ID Register
- *
  * @return  marchid value
  */
 static inline uint32_t __get_MARCHID(void)
 {
-    uint32_t result;
+	uint32_t result;
 
-    __ASM volatile("csrr %0,""marchid": "=r"(result));
-    return (result);
+	__ASM volatile("csrr %0,""marchid": "=r"(result));
+	return (result);
 }
 
 /*********************************************************************
  * @fn      __get_MIMPID
- *
  * @brief   Return Machine Implementation ID Register
- *
  * @return  mimpid value
  */
 static inline uint32_t __get_MIMPID(void)
 {
-    uint32_t result;
-
-    __ASM volatile("csrr %0,""mimpid": "=r"(result));
-    return (result);
+	uint32_t result;
+	__ASM volatile("csrr %0,""mimpid": "=r"(result));
+	return (result);
 }
 
 /*********************************************************************
  * @fn      __get_MHARTID
- *
  * @brief   Return Hart ID Register
- *
  * @return  mhartid value
  */
 static inline uint32_t __get_MHARTID(void)
 {
-    uint32_t result;
-
-    __ASM volatile("csrr %0,""mhartid": "=r"(result));
-    return (result);
+	uint32_t result;
+	__ASM volatile("csrr %0,""mhartid": "=r"(result));
+	return (result);
 }
 
 /*********************************************************************
  * @fn      __get_SP
- *
  * @brief   Return SP Register
- *
  * @return  SP value
  */
 static inline uint32_t __get_SP(void)
 {
-    uint32_t result;
-
-    __ASM volatile("mv %0,""sp": "=r"(result):);
-    return (result);
+	uint32_t result;
+	__ASM volatile("mv %0,""sp": "=r"(result):);
+	return (result);
 }
-
-// Depending on a LOT of factors, it's about 6 cycles per n.
-// **DO NOT send it zero or less.**
-#ifndef __MACOSX__
-static inline void Delay_Tiny( int n ) {
-	asm volatile( "\
-		mv a5, %[n]\n\
-		1: \
-		c.addi a5, -1\n\
-		c.bnez a5, 1b" : : [n]"r"(n) : "a5" );
-}
-#endif
 
 #endif
 
@@ -12883,6 +12993,23 @@ void DefaultIRQHandler( void ) __attribute__((section(".text.vector_handler"))) 
 
 void DelaySysTick( uint32_t n );
 
+
+// Depending on a LOT of factors, it's about 6 cycles per n.
+// **DO NOT send it zero or less.**
+#ifndef __MACOSX__
+#ifndef __DELAY_TINY_DEFINED__
+#define __DELAY_TINY_DEFINED__
+static inline void Delay_Tiny( int n ) {
+	__ASM volatile( "\
+		mv a5, %[n]\n\
+		1: \
+		c.addi a5, -1\n\
+		c.bnez a5, 1b" : : [n]"r"(n) : "a5" );
+}
+#endif
+#endif
+
+
 // Tricky: We need to make sure main and SystemInit() are preserved.
 int main() __attribute__((used));
 void SystemInit(void);
@@ -12977,20 +13104,42 @@ Examples:
 
 #endif
 
-/* Copyright notice from original EVT.
- ********************************** (C) COPYRIGHT  *******************************
- * File Name          : core_riscv.h + ch32v00x.h
- * Author             : WCH
- * Version            : V1.0.0
- * Date               : 2022/08/08
- * Description        : RISC-V Core Peripheral Access Layer Header File
- *********************************************************************************
+/*
+ * This file contains various parts of the official WCH EVT Headers which
+ * were originally under a restrictive license.
+ * 
+ * The collection of this file was generated by cnlohr, 2023-02-18 and
+ * AlexanderMandera, 2023-06-23
+ *
+ * While originally under a restrictive copyright, WCH has approved use
+ * under MIT-licensed use, because of inclusion in Zephyr, as well as other
+ * open-source licensed projects.
+ *
+ * These copies of the headers from WCH are available now under:
+ *
  * Copyright (c) 2021 Nanjing Qinheng Microelectronics Co., Ltd.
- * Attention: This software (modified or not) and binary are used for
- * microcontroller manufactured by Nanjing Qinheng Microelectronics.
- *******************************************************************************/
-
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the “Software”), to
+ * deal in the Software without restriction, including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+ * sell copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+ * IN THE SOFTWARE.
+ */
 
 #ifdef __cplusplus
 };
 #endif
+
+

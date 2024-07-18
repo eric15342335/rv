@@ -8,6 +8,7 @@ CH32V003FUN?=../ch32v003fun
 WRITE_SECTION?=flash
 SYSTEM_C?=$(CH32V003FUN)/ch32v003fun.c
 CFLAGS?=-g -O1 -ffunction-sections -fdata-sections -fmessage-length=0 -msmall-data-limit=8
+LDFLAGS+=-Wl,--print-memory-usage
 
 ifeq ($(TARGET_MCU),CH32V003)
 	CFLAGS_ARCH+=-march=rv32ec -mabi=ilp32e -DCH32V003=1
@@ -152,7 +153,6 @@ LDFLAGS+=-T $(LINKER_SCRIPT) -Wl,--gc-sections
 FILES_TO_COMPILE:=$(SYSTEM_C) $(TARGET).$(TARGET_EXT) $(ADDITIONAL_C_FILES) 
 
 $(TARGET).bin : $(TARGET).elf
-	$(PREFIX)-size $^
 	$(PREFIX)-objdump -S $^ > $(TARGET).lst
 	$(PREFIX)-objdump -t $^ > $(TARGET).map
 	$(PREFIX)-objcopy -O binary $< $(TARGET).bin
@@ -168,9 +168,3 @@ $(TARGET).elf : $(FILES_TO_COMPILE) $(LINKER_SCRIPT) $(EXTRA_ELF_DEPENDENCIES)
 build : $(TARGET).bin
 
 OBJSIZE = $(PREFIX)-size
-
-size:
-	@echo "------------------"
-	@echo "FLASH: $(shell $(OBJSIZE) -d $(TARGET).elf | awk '/[0-9]/ {print $$1 + $$2}') bytes"
-	@echo "SRAM:  $(shell $(OBJSIZE) -d $(TARGET).elf | awk '/[0-9]/ {print $$2 + $$3}') bytes"
-	@echo "------------------"
