@@ -19,6 +19,5 @@ clean:
 riscv:
 	$(MAKE) -f Makefile1 clean
 	$(MAKE) -f Makefile1
-	$(MAKE) -f Makefile1 size
 
 .PHONY: clean riscv
