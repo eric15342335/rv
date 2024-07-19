@@ -7,7 +7,7 @@ CH32V003FUN?=../ch32v003fun
 
 WRITE_SECTION?=flash
 SYSTEM_C?=$(CH32V003FUN)/ch32v003fun.c
-CFLAGS?=-g -O1 -ffunction-sections -fdata-sections -fmessage-length=0 -msmall-data-limit=8
+CFLAGS?=-g -Os -flto -ffunction-sections -fdata-sections -fmessage-length=0 -msmall-data-limit=8
 LDFLAGS+=-Wl,--print-memory-usage
 
 ifeq ($(TARGET_MCU),CH32V003)
@@ -147,7 +147,9 @@ CFLAGS+= \
 	-I$(CH32V003FUN) \
 	-nostdlib \
 	-I. -Wall -Wextra $(EXTRA_CFLAGS) \
-	-Wshadow -Wswitch -Wfloat-equal rv.c
+	-Wshadow -Wswitch -Wfloat-equal \
+	rv.c
+# note: rv.c is needed, this is makefile 'hack' to include rv.c in the build
 
 LDFLAGS+=-T $(LINKER_SCRIPT) -Wl,--gc-sections
 FILES_TO_COMPILE:=$(SYSTEM_C) $(TARGET).$(TARGET_EXT) $(ADDITIONAL_C_FILES) 

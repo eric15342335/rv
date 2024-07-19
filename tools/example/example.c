@@ -11,16 +11,17 @@ rv_res bus_cb(
     void * user, rv_u32 addr, rv_u8 * data, rv_u32 is_store, rv_u32 width);
 
 /** @note Strange behaviour
- * There is 9 instructions in the program,
- * but the length of the program is 10,
+ * There is n instructions in the program,
+ * but the length of the program is n+1,
  * otherwise at the end of the program,
  * the following will happen:
  * @details
  * PC: 0, Trap: 2 (Illegal instruction)
  * PC: 0, Trap: 1 (Instruction fault)
  * ... // infinite loop
+ * 7/19 update: maybe a problem with RAM_BASE or mem[RAM_BASE]
  */
-rv_u16 program[10] = {
+rv_u16 program[RAM_SIZE/2] = {
     // description: multiply a0 by a1
     // load 5 into a0, 4 into a1
     // 0: c.li a0, 5
@@ -32,25 +33,28 @@ rv_u16 program[10] = {
     0x8a01,
     // 6: c.or a2, a0
     0x8e49,
-    // 8: c.beqz a1, 8
-    0xc581,
-    // 10: c.addi a1, -1
+    // 8: c.addi a1, -1
     0x15fd,
-    // 12: c.add a0, a2
+    // 10: c.beqz a1, 8
+    0xc581,
+    // 12: c.addi a1, -1
+    0x15fd,
+    // 14: c.add a0, a2
     0x9532,
-    // 14: c.j -6
+    // 16: c.j -6
     0xbfed,
-    // 16: ecall (end)
-    0x0073,
+    // 18: ecall
+    0x0073
 };
 
 void display_all_registers(rv * cpu) {
-    for (int i = 10; i < 13; i++) {
-        // if (cpu->r[i] != 0)
-        printf("r%d: %d ", i, cpu->r[i]);
+    for (int i = 0; i < 32; i++) {
+        if (cpu->r[i] != 0)
+            printf("r%d: %d ", i, cpu->r[i]);
     }
     printf("\n");
 }
+
 
 int main(void) {
     SystemInit();
@@ -62,11 +66,11 @@ int main(void) {
     while (1) {
         rv_u32 trap = rv_step(&cpu);
         printf("PC: %X, ", cpu.pc);
-        printf("Trap: %X\n", trap);
+        printf("Trap: %X, ", trap);
         display_all_registers(&cpu);
         if (trap == RV_EMECALL)
             break;
-        Delay_Ms(200);
+        Delay_Ms(100);
     }
     printf("Environment call @ %X\n", cpu.csr.mepc);
     display_all_registers(&cpu);
